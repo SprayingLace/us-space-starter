@@ -66,7 +66,11 @@ function formatTime(value: number) {
 }
 
 export default function MovieLounge() {
-  const [supabase] = useState(() => createClient());
+  const [supabase, setSupabase] = useState<ReturnType<typeof createClient> | null>(null);
+
+  useEffect(() => {
+    setSupabase(createClient());
+  }, []);
   const playerHostRef = useRef<HTMLDivElement>(null);
   const playerRef = useRef<PlayerLike | null>(null);
   const playerReadyRef = useRef(false);
@@ -123,7 +127,7 @@ export default function MovieLounge() {
     playback_time?: number;
     is_playing?: boolean;
   }) => {
-    if (!roomId || !userIdRef.current) return;
+    if (!roomId || !userIdRef.current || !supabase) return;
     const previous = sessionRef.current;
     const next: LoungeSession = {
       room_id: roomId,
@@ -148,6 +152,7 @@ export default function MovieLounge() {
   }, [roomId, setCurrentSession, supabase]);
 
   useEffect(() => {
+    if (!supabase) return;
     let active = true;
 
     const initialize = async () => {
