@@ -117,7 +117,7 @@ export default function Home() {
       if (status === "SUBSCRIBED") await channel.track({ name: USER, online_at: new Date().toISOString() });
     });
     (window as any).__usSpaceChannel = channel;
-    return () => { supabase.removeChannel(channel); };
+    return () => { supabase?.removeChannel(channel); };
   }, []);
 
   const broadcast = useCallback((event: string, payload: object) => {
