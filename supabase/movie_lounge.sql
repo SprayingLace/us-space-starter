@@ -4,7 +4,7 @@
 create table if not exists public.movie_lounge_sessions (
   room_id uuid primary key references public.rooms(id) on delete cascade,
   video_id text null check (video_id is null or video_id ~ '^[A-Za-z0-9_-]{11}$'),
-  current_time double precision not null default 0 check (current_time >= 0),
+  playback_time double precision not null default 0 check (playback_time >= 0),
   is_playing boolean not null default false,
   updated_by uuid null references auth.users(id) on delete set null,
   updated_at timestamptz not null default now()
