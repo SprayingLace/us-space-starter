@@ -1,1 +1,6 @@
 node_modules
+
+# Keep local secrets and build output out of Git
+.env.local
+.next/
+

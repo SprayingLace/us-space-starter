@@ -57,6 +57,11 @@ function weatherLabel(code: number) {
 }
 
 export default function Home() {
+  const [hasMounted, setHasMounted] = useState(false);
+
+useEffect(() => {
+  setHasMounted(true);
+}, []);
   const [active, setActive] = useState("home");
   const [pulse, setPulse] = useState(false);
   const [hearts, setHearts] = useState<{id:number; x:number}[]>([]);
