@@ -1,0 +1,1 @@
+Put public assets such as manifest.json and service-worker.js in the public/ directory after creating it.
