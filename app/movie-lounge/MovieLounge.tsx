@@ -65,7 +65,7 @@ function formatTime(value: number) {
 }
 
 export default function MovieLounge() {
-  const supabase = useRef(createClient()).current;
+  const [supabase] = useState(() => createClient());
   const playerHostRef = useRef<HTMLDivElement>(null);
   const playerRef = useRef<PlayerLike | null>(null);
   const channelRef = useRef<any>(null);
