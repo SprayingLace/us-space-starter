@@ -14,7 +14,7 @@ declare global {
 type LoungeSession = {
   room_id: string;
   video_id: string | null;
-  current_time: number;
+  playback_time: number;
   is_playing: boolean;
   updated_by: string | null;
   updated_at: string;
@@ -89,7 +89,7 @@ export default function MovieLounge() {
   const setCurrentSession = useCallback((next: LoungeSession) => {
     sessionRef.current = next;
     setSession(next);
-    setDraftTime(next.current_time || 0);
+    setDraftTime(next.playback_time || 0);
   }, []);
 
   const applyToPlayer = useCallback((next: LoungeSession) => {
@@ -100,7 +100,7 @@ export default function MovieLounge() {
     const elapsed = next.is_playing && Number.isFinite(updatedAt)
       ? Math.max(0, (Date.now() - updatedAt) / 1000)
       : 0;
-    const targetTime = Math.max(0, next.current_time + elapsed);
+    const targetTime = Math.max(0, next.playback_time + elapsed);
     const currentId = player.getVideoData?.()?.video_id;
 
     if (currentId !== next.video_id) {
@@ -120,7 +120,7 @@ export default function MovieLounge() {
 
   const saveSession = useCallback(async (patch: {
     video_id?: string | null;
-    current_time?: number;
+    playback_time?: number;
     is_playing?: boolean;
   }) => {
     if (!roomId || !userIdRef.current) return;
@@ -128,7 +128,7 @@ export default function MovieLounge() {
     const next: LoungeSession = {
       room_id: roomId,
       video_id: patch.video_id !== undefined ? patch.video_id : previous?.video_id ?? null,
-      current_time: patch.current_time !== undefined ? Math.max(0, patch.current_time) : previous?.current_time ?? 0,
+      playback_time: patch.playback_time !== undefined ? Math.max(0, patch.playback_time) : previous?.playback_time ?? 0,
       is_playing: patch.is_playing !== undefined ? patch.is_playing : previous?.is_playing ?? false,
       updated_by: userIdRef.current,
       updated_at: new Date().toISOString(),
@@ -204,7 +204,7 @@ export default function MovieLounge() {
             {
               room_id: currentRoomId,
               video_id: null,
-              current_time: 0,
+              playback_time: 0,
               is_playing: false,
               updated_by: authData.user.id,
               updated_at: new Date().toISOString(),
@@ -220,7 +220,7 @@ export default function MovieLounge() {
 
         const { data, error: readError } = await supabase
           .from("movie_lounge_sessions")
-          .select("room_id, video_id, current_time, is_playing, updated_by, updated_at")
+          .select("room_id, video_id, playback_time, is_playing, updated_by, updated_at")
           .eq("room_id", currentRoomId)
           .single();
 
@@ -298,7 +298,7 @@ export default function MovieLounge() {
           const current = sessionRef.current;
           const playerInstance = playerRef.current;
           if (current && playerInstance) {
-            setDraftTime(playerInstance.getCurrentTime?.() ?? current.current_time);
+            setDraftTime(playerInstance.getCurrentTime?.() ?? current.playback_time);
             setDuration(playerInstance.getDuration?.() ?? 0);
           }
         },
@@ -332,12 +332,12 @@ export default function MovieLounge() {
       const current = sessionRef.current;
       const player = playerRef.current;
       if (!current || !player) return;
-      setDraftTime(player.getCurrentTime?.() ?? current.current_time);
+      setDraftTime(player.getCurrentTime?.() ?? current.playback_time);
       setDuration(player.getDuration?.() ?? 0);
 
       if (current.video_id && current.is_playing && player.getPlayerState?.() === 1) {
         const updatedAt = Date.parse(current.updated_at);
-        const expected = current.current_time + (Number.isFinite(updatedAt) ? Math.max(0, (Date.now() - updatedAt) / 1000) : 0);
+        const expected = current.playback_time + (Number.isFinite(updatedAt) ? Math.max(0, (Date.now() - updatedAt) / 1000) : 0);
         const actual = player.getCurrentTime?.() ?? expected;
         if (Math.abs(actual - expected) > 2.5) player.seekTo(expected, true);
       }
@@ -355,7 +355,7 @@ export default function MovieLounge() {
     }
     setBusy(true);
     setError("");
-    await saveSession({ video_id: videoId, current_time: 0, is_playing: false });
+    await saveSession({ video_id: videoId, playback_time: 0, is_playing: false });
     setNotice("Movie loaded for both of you. Press play when you're ready.");
     setBusy(false);
   };
@@ -366,15 +366,15 @@ export default function MovieLounge() {
       return;
     }
     const player = playerRef.current;
-    const currentTime = player?.getCurrentTime?.() ?? session.current_time;
+    const currentTime = player?.getCurrentTime?.() ?? session.playback_time;
     const nextPlaying = !session.is_playing;
-    await saveSession({ current_time: currentTime, is_playing: nextPlaying });
+    await saveSession({ playback_time: currentTime, is_playing: nextPlaying });
     setNotice(nextPlaying ? "Play sent to both screens." : "Pause sent to both screens.");
   };
 
   const commitSeek = async () => {
     const target = Math.max(0, Math.min(draftTime, duration || draftTime));
-    await saveSession({ current_time: target });
+    await saveSession({ playback_time: target });
     setNotice("Playback position synced.");
   };
 
