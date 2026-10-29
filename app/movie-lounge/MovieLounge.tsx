@@ -26,6 +26,7 @@ type PlayerLike = {
   stopVideo: () => void;
   seekTo: (seconds: number, allowSeekAhead: boolean) => void;
   loadVideoById: (options: { videoId: string; startSeconds?: number }) => void;
+  cueVideoById: (options: { videoId: string; startSeconds?: number }) => void;
   getCurrentTime: () => number;
   getDuration: () => number;
   getPlayerState: () => number;
@@ -68,6 +69,7 @@ export default function MovieLounge() {
   const [supabase] = useState(() => createClient());
   const playerHostRef = useRef<HTMLDivElement>(null);
   const playerRef = useRef<PlayerLike | null>(null);
+  const playerReadyRef = useRef(false);
   const channelRef = useRef<any>(null);
   const sessionRef = useRef<LoungeSession | null>(null);
   const userIdRef = useRef<string | null>(null);
@@ -92,7 +94,7 @@ export default function MovieLounge() {
 
   const applyToPlayer = useCallback((next: LoungeSession) => {
     const player = playerRef.current;
-    if (!player || !next.video_id) return;
+    if (!player || !playerReadyRef.current || !next.video_id) return;
 
     const updatedAt = Date.parse(next.updated_at);
     const elapsed = next.is_playing && Number.isFinite(updatedAt)
@@ -102,7 +104,8 @@ export default function MovieLounge() {
     const currentId = player.getVideoData?.()?.video_id;
 
     if (currentId !== next.video_id) {
-      player.loadVideoById({ videoId: next.video_id, startSeconds: targetTime });
+      if (next.is_playing) player.loadVideoById({ videoId: next.video_id, startSeconds: targetTime });
+      else player.cueVideoById({ videoId: next.video_id, startSeconds: targetTime });
     } else {
       const currentTime = player.getCurrentTime?.() ?? 0;
       if (Math.abs(currentTime - targetTime) > 1.25) player.seekTo(targetTime, true);
@@ -286,6 +289,7 @@ export default function MovieLounge() {
       events: {
         onReady: (event: { target: PlayerLike }) => {
           playerRef.current = event.target;
+          playerReadyRef.current = true;
           setPlayerReady(true);
           const current = sessionRef.current;
           if (current) applyToPlayerRef.current(current);
@@ -318,6 +322,7 @@ export default function MovieLounge() {
         playerRef.current?.destroy();
       } catch {}
       playerRef.current = null;
+      playerReadyRef.current = false;
       setPlayerReady(false);
     };
   }, [apiReady, loading, roomId]);
